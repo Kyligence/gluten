@@ -17,11 +17,12 @@
 
 package io.glutenproject.spark.sql.execution.datasources.velox;
 
+import io.glutenproject.init.JniInitialized;
 import org.apache.spark.sql.execution.datasources.VeloxColumnarBatchIterator;
 
 import java.io.IOException;
 
-public class DatasourceJniWrapper {
+public class DatasourceJniWrapper extends JniInitialized {
 
   public DatasourceJniWrapper() throws IOException {
   }

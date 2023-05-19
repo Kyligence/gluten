@@ -15,13 +15,15 @@
  * limitations under the License.
  */
 
-package org.apache.spark.util.memory
+package org.apache.spark.sql.execution.datasources;
 
-/**
- * Manages the lifecycle for a specific type of memory resource managed by Spark. See also
- * `org.apache.spark.util.memory.TaskMemoryResources`.
- */
-trait TaskMemoryResourceManager {
-  @throws(classOf[Exception])
-  def release(): Unit
+public class CHDatasourceJniWrapper {
+
+    public native long nativeInitFileWriterWrapper(String filePath);
+
+    //  public native void inspectSchema(long instanceId, long cSchemaAddress);
+
+    public native void write(long instanceId, long blockAddress);
+
+    public native void close(long instanceId);
 }

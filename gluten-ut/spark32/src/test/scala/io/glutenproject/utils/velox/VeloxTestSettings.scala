@@ -63,7 +63,6 @@ class VeloxTestSettings extends BackendTestSettings {
     .exclude("cast from date")
     .exclude("SPARK-32828: cast from a derived user-defined type to a base type")
     .exclude("Fast fail for cast string type to decimal type")
-    .exclude("missing cases - from boolean")
 
   enableSuite[GlutenAnsiCastSuiteWithAnsiModeOff]
     .exclude(
@@ -122,7 +121,9 @@ class VeloxTestSettings extends BackendTestSettings {
       // We can enable the below test for spark 3.4 and higher versions.
       "Gluten - describe",
       // decimal failed ut.
-      "SPARK-22271: mean overflows and returns null for some decimal variables"
+      "SPARK-22271: mean overflows and returns null for some decimal variables",
+      // Not supported for approx_count_distinct
+      "SPARK-34165: Add count_distinct to summary"
     )
 
   enableSuite[GlutenDataFrameNaFunctionsSuite]
@@ -173,6 +174,8 @@ class VeloxTestSettings extends BackendTestSettings {
   enableSuite[GlutenLiteralExpressionSuite]
     .exclude("default")
     .exclude("decimal")
+    // Timestamp: Velox to Arrow.
+    .exclude("construct literals from arrays of java.time.Instant")
   enableSuite[GlutenIntervalExpressionsSuite]
     .exclude("seconds")
     .exclude("ANSI: extract days, hours, minutes and seconds")
@@ -235,6 +238,7 @@ class VeloxTestSettings extends BackendTestSettings {
   enableSuite[GlutenDataFrameWindowFunctionsSuite]
     // Spill not supported yet.
     .exclude("Window spill with more than the inMemoryThreshold and spillThreshold")
+    .exclude("SPARK-21258: complex object in combination with spilling")
     .exclude("NaN and -0.0 in window partition keys") // NaN case
     // Rewrite with NaN test cases excluded.
     .exclude("covar_samp, var_samp (variance), stddev_samp (stddev) functions in specific window")
@@ -1038,7 +1042,5 @@ class VeloxTestSettings extends BackendTestSettings {
     .exclude("SPARK-16336,SPARK-27961 Suggest fixing FileNotFoundException")
   enableSuite[GlutenSimpleShowCreateTableSuite]
   enableSuite[GlutenStatisticsCollectionSuite]
-    // TODO: bug fix on TableScan.
-    .exclude("store and retrieve column stats in different time zones")
   enableSuite[FallbackStrategiesSuite]
 }

@@ -15,23 +15,31 @@
  * limitations under the License.
  */
 
-package io.glutenproject.vectorized;
+package io.glutenproject.substrait.expression;
 
-import io.glutenproject.execution.SparkRowIterator;
-import io.glutenproject.row.SparkRowInfo;
+import io.substrait.proto.Expression;
 
-public class BlockNativeConverter {
+import io.glutenproject.substrait.type.TypeNode;
 
-  // for ch columnar -> spark row
-  public native SparkRowInfo convertColumnarToRow(long blockAddress);
+import java.io.Serializable;
 
-  // for ch columnar -> spark row
-  public native void freeMemory(long address, long size);
+public abstract class LiteralNode implements ExpressionNode, Serializable {
+  private final TypeNode typeNode;
 
-  // for spark row -> ch columnar
-  public native long convertSparkRowsToCHColumn(SparkRowIterator iter, String[] names,
-    byte[][] types);
+  LiteralNode(TypeNode typeNode) {
+    this.typeNode = typeNode;
+  }
 
-  // for spark row -> ch columnar
-  public native void freeBlock(long blockAddress);
+  public TypeNode getTypeNode() {
+    return typeNode;
+  }
+
+  protected abstract Expression.Literal getLiteral();
+
+  @Override
+  public Expression toProtobuf() {
+    Expression.Builder builder = Expression.newBuilder();
+    builder.setLiteral(getLiteral());
+    return builder.build();
+  }
 }

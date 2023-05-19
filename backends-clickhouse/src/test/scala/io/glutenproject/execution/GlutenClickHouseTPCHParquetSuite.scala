@@ -21,6 +21,7 @@ import io.glutenproject.extension.GlutenPlan
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.catalyst.optimizer.BuildLeft
+import org.apache.spark.sql.execution.ColumnarToRowExec
 import org.apache.spark.sql.functions.{col, rand, when}
 
 import java.io.File
@@ -459,6 +460,31 @@ class GlutenClickHouseTPCHParquetSuite extends GlutenClickHouseTPCHAbstractSuite
         "from lineitem order by l_shipdate limit 10;")(checkOperatorMatch[ProjectExecTransformer])
   }
 
+  test("test literals") {
+    val query = """
+      SELECT
+        CAST(NULL AS BOOLEAN) AS boolean_literal,
+        CAST(1 AS TINYINT) AS tinyint_literal,
+        CAST(2 AS SMALLINT) AS smallint_literal,
+        CAST(3 AS INTEGER) AS integer_literal,
+        CAST(4 AS BIGINT) AS bigint_literal,
+        CAST(5.5 AS FLOAT) AS float_literal,
+        CAST(6.6 AS DOUBLE) AS double_literal,
+        CAST('7' AS STRING) AS string_literal,
+        DATE '2022-01-01' AS date_literal,
+        TIMESTAMP '2022-01-01 10:00:00' AS timestamp_literal,
+        CAST(X'48656C6C6F' AS BINARY) AS binary_literal,
+        ARRAY(1, 2, 3, 4) AS array_literal,
+        MAP("a", 1, "b", 2) AS map_literal,
+        STRUCT("hello", 123) AS struct_literal,
+        ARRAY() as empty_array_literal,
+        MAP() as empty_map_literal,
+        ARRAY(1, NULL, 3) as array_with_null_literal,
+        MAP(1, 2, CAST(3 as SHORT), null) as map_with_null_literal
+      from range(10)"""
+    runQueryAndCompare(query)(checkOperatorMatch[ProjectExecTransformer])
+  }
+
   // see issue https://github.com/Kyligence/ClickHouse/issues/93
   ignore("TPCH Q22") {
     runTPCHQuery(22) { df => }
@@ -873,5 +899,16 @@ class GlutenClickHouseTPCHParquetSuite extends GlutenClickHouseTPCHAbstractSuite
       compareResult: Boolean = true)(customCheck: DataFrame => Unit): Unit = {
     // super.runTPCHQuery(queryNum, tpchQueries, queriesResults, compareResult)(customCheck)
     compareTPCHQueryAgainstVanillaSpark(queryNum, tpchQueries, customCheck)
+  }
+
+  test("test 'ColumnarToRowExec should not be used'") {
+    withSQLConf(
+      "spark.gluten.sql.columnar.filescan" -> "false",
+      "spark.gluten.sql.columnar.filter" -> "false"
+    ) {
+      runQueryAndCompare("select l_shipdate from lineitem where l_shipdate = '1996-05-07'") {
+        df => getExecutedPlan(df).count(plan => plan.isInstanceOf[ColumnarToRowExec]) == 0
+      }
+    }
   }
 }

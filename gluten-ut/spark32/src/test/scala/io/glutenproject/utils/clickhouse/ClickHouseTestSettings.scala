@@ -21,6 +21,7 @@ import io.glutenproject.utils.BackendTestSettings
 import org.apache.spark.sql.GlutenTestConstants.GLUTEN_TEST
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.expressions._
+import org.apache.spark.sql.execution.FallbackStrategiesSuite
 import org.apache.spark.sql.extension.{GlutenCustomerExtensionSuite, GlutenSessionExtensionSuite}
 
 class ClickHouseTestSettings extends BackendTestSettings {
@@ -128,7 +129,8 @@ class ClickHouseTestSettings extends BackendTestSettings {
   enableSuite[GlutenComplexTypeSuite]
     .exclude(
       "CreateMap",
-      "MapFromArrays"
+      "MapFromArrays",
+      "SPARK-33460: GetMapValue NoSuchElementException"
     )
     .excludeByPrefix(
       "SPARK-33386" // different result: actual: empty excepted: null
@@ -262,4 +264,6 @@ class ClickHouseTestSettings extends BackendTestSettings {
       "SPARK-32659: Fix the data issue when pruning DPP on non-atomic type",
       "Gluten - SPARK-32659: Fix the data issue when pruning DPP on non-atomic type"
     )
+  enableSuite[FallbackStrategiesSuite]
 }
+

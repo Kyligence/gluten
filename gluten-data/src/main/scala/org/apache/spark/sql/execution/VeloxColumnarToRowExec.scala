@@ -36,13 +36,13 @@ import scala.collection.JavaConverters._
 import scala.concurrent.duration.NANOSECONDS
 import org.apache.spark.sql.execution.metric.SQLMetric
 import org.apache.spark.sql.vectorized.ColumnarBatch
-import org.apache.spark.util.memory.TaskMemoryResources
+import org.apache.spark.util.memory.TaskResources
 
-case class GlutenColumnarToRowExec(child: SparkPlan)
+case class VeloxColumnarToRowExec(child: SparkPlan)
   extends GlutenColumnarToRowExecBase(child = child) {
-  private val LOG = LoggerFactory.getLogger(classOf[GlutenColumnarToRowExec])
+  private val LOG = LoggerFactory.getLogger(classOf[VeloxColumnarToRowExec])
 
-  override def nodeName: String = "GlutenColumnarToRowExec"
+  override def nodeName: String = "VeloxColumnarToRowExec"
 
   override def buildCheck(): Unit = {
     val schema = child.schema
@@ -67,7 +67,7 @@ case class GlutenColumnarToRowExec(child: SparkPlan)
             case _: DecimalType =>
             case _ =>
               throw new UnsupportedOperationException(s"${field.dataType} is not supported in " +
-                  s"GlutenColumnarToRowExec/ArrowColumnarToRowConverter.")
+                  s"VeloxColumnarToRowExec.")
           }
         }
       case _ =>
@@ -89,7 +89,7 @@ case class GlutenColumnarToRowExec(child: SparkPlan)
             case _: DecimalType =>
             case _ =>
               throw new UnsupportedOperationException(s"${field.dataType} is not supported in " +
-                  s"GlutenColumnarToRowExec/VeloxColumnarToRowConverter")
+                  s"VeloxColumnarToRowExec")
 
           }
         }
@@ -115,7 +115,7 @@ case class GlutenColumnarToRowExec(child: SparkPlan)
 
   override def outputOrdering: Seq[SortOrder] = child.outputOrdering
 
-  protected def withNewChildInternal(newChild: SparkPlan): GlutenColumnarToRowExec =
+  protected def withNewChildInternal(newChild: SparkPlan): VeloxColumnarToRowExec =
     copy(child = newChild)
 }
 
@@ -175,12 +175,12 @@ class GlutenColumnarToRowRDD(@transient sc: SparkContext, rdd: RDD[ColumnarBatch
           val row = new UnsafeRow(batch.numCols())
           var closed = false
 
-          TaskMemoryResources.addRecycler(100)(_ => {
+          TaskResources.addRecycler(100) {
             if (!closed) {
               jniWrapper.nativeClose(info.instanceID)
               closed = true
             }
-          })
+          }
 
           override def hasNext: Boolean = {
             val result = rowId < batch.numRows()
