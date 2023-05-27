@@ -145,7 +145,7 @@ public:
 
         async_reader->setReadUntilEnd();
         if (new_settings.remote_fs_prefetch)
-            async_reader->prefetch(Priority{});
+            async_reader->prefetch(0);
 
         return async_reader;
     }
