@@ -24,6 +24,8 @@
 #include <Processors/Formats/IRowInputFormat.h>
 #include <Processors/Formats/Impl/CSVRowInputFormat.h>
 #include <Storages/SubstraitSource/FormatFile.h>
+#include <Formats/FormatSettings.h>
+
 
 namespace local_engine
 {
@@ -74,7 +76,16 @@ public:
     std::vector<String> readTypes() override;
     void skipFieldDelimiter() override;
     void skipRowEndDelimiter() override;
+
+    void skipField(size_t /*file_column*/) override { skipField(); }
+    void skipField();
+
+    template <typename Vector, bool include_quotes = false>
+    void readCSVStringIntoPro(Vector & s, DB::ReadBuffer & buf, const DB::FormatSettings::CSV & settings);
+
     bool readField(DB::IColumn & column, const DB::DataTypePtr & type, const DB::SerializationPtr & serialization, bool is_last_file_column, const String & column_name) override;
+
+
 
 private:
     void preSkipNullValue();
