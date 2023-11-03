@@ -1107,6 +1107,128 @@ class GlutenClickHouseFileFormatSuite
     assert(df.collect().isEmpty)
   }
 
+  test("issue-2881 null string test") {
+    withSQLConf(
+      (
+        "spark.gluten.sql.columnar.backend.ch.runtime_settings." +
+          "use_excel_serialization.empty_as_null",
+        "true")) {
+      val file_path = csvDataPath + "/null_string.csv"
+      val schema = StructType.apply(
+        Seq(
+          StructField.apply("c1", StringType, nullable = true),
+          StructField.apply("c2", ShortType, nullable = true)
+        ))
+
+      val options = new util.HashMap[String, String]()
+      options.put("delimiter", ",")
+
+      val df = spark.read
+        .options(options)
+        .schema(schema)
+        .csv(file_path)
+        .toDF()
+
+      val dataCorrect = new util.ArrayList[Row]()
+      dataCorrect.add(Row(null, 1.toShort))
+      dataCorrect.add(Row(null, 2.toShort))
+      dataCorrect.add(Row("1", 3.toShort))
+
+      var expectedAnswer: Seq[Row] = null
+      withSQLConf(vanillaSparkConfs(): _*) {
+        expectedAnswer = spark.createDataFrame(dataCorrect, schema).toDF().collect()
+      }
+      checkAnswer(df, expectedAnswer)
+    }
+  }
+
+  test("issue-3542 null string test") {
+    withSQLConf(
+      (
+        "spark.gluten.sql.columnar.backend.ch.runtime_settings." +
+          "use_excel_serialization.empty_as_null",
+        "false")) {
+      val file_path = csvDataPath + "/null_string.csv"
+      val schema = StructType.apply(
+        Seq(
+          StructField.apply("c1", StringType, nullable = true),
+          StructField.apply("c2", ShortType, nullable = true)
+        ))
+
+      val options = new util.HashMap[String, String]()
+      options.put("delimiter", ",")
+
+      val df = spark.read
+        .options(options)
+        .schema(schema)
+        .csv(file_path)
+        .toDF()
+
+      val dataCorrect = new util.ArrayList[Row]()
+      dataCorrect.add(Row(null, 1.toShort))
+      dataCorrect.add(Row("", 2.toShort))
+      dataCorrect.add(Row("1", 3.toShort))
+
+      var expectedAnswer: Seq[Row] = null
+      withSQLConf(vanillaSparkConfs(): _*) {
+        expectedAnswer = spark.createDataFrame(dataCorrect, schema).toDF().collect()
+      }
+      checkAnswer(df, expectedAnswer)
+    }
+  }
+
+  test("test integer read with sign at the end of line") {
+    val file_path = csvDataPath + "/sign_at_end_int.csv"
+    val schema = StructType.apply(
+      Seq(
+        StructField.apply("c1", IntegerType, nullable = true)
+      ))
+
+    val options = new util.HashMap[String, String]()
+    options.put("delimiter", ",")
+
+    spark.read
+      .options(options)
+      .schema(schema)
+      .csv(file_path)
+      .toDF()
+      .createTempView("test_null_int")
+
+    compareResultsAgainstVanillaSpark(
+      """
+        | select * from test_null_int
+        |""".stripMargin,
+      compareResult = true,
+      _ => {}
+    )
+  }
+
+  test("test float read with sign at the end of line") {
+    val file_path = csvDataPath + "/sign_at_end_float.csv"
+    val schema = StructType.apply(
+      Seq(
+        StructField.apply("c1", FloatType, nullable = true)
+      ))
+
+    val options = new util.HashMap[String, String]()
+    options.put("delimiter", ",")
+
+    spark.read
+      .options(options)
+      .schema(schema)
+      .csv(file_path)
+      .toDF()
+      .createTempView("test_null_float")
+
+    compareResultsAgainstVanillaSpark(
+      """
+        | select * from test_null_float
+        |""".stripMargin,
+      compareResult = true,
+      _ => {}
+    )
+  }
+
   def createEmptyParquet(): String = {
     val data = spark.sparkContext.emptyRDD[Row]
     val schema = new StructType()
