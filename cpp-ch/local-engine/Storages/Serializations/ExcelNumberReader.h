@@ -401,7 +401,8 @@ bool readExcelIntTextImpl(T & x, DB::ReadBuffer & buf, bool has_quote, const DB:
                 {
                     if (!(*buf.position() >= '0' && *buf.position() <= '9'))
                     {
-                        if (number_force)
+                        if (number_force || *buf.position() == settings.csv.delimiter ||*buf.position() == '\'' ||*buf.position() == '\"'
+                            || *buf.position() == '\n' || *buf.position() == '\r')
                             break;
                         else
                             return false;
@@ -452,7 +453,7 @@ bool readExcelIntTextImpl(T & x, DB::ReadBuffer & buf, bool has_quote, const DB:
         {
             continue;
         }
-        else if (has_number && !(*buf.position() >= '0' && *buf.position() <= '9') && number_force) // process suffix
+        else if (has_number && !(*buf.position() >= '0' && *buf.position() <= '9')) // process suffix
         {
             while (!buf.eof())
             {

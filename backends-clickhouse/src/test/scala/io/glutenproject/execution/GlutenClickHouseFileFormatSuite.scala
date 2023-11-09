@@ -1248,7 +1248,8 @@ class GlutenClickHouseFileFormatSuite
           StructField.apply("a", IntegerType, nullable = true),
           StructField.apply("b", IntegerType, nullable = true),
           StructField.apply("c", IntegerType, nullable = true),
-          StructField.apply("d", IntegerType, nullable = true)
+          StructField.apply("d", IntegerType, nullable = true),
+          StructField.apply("e", IntegerType, nullable = true)
         ))
 
       val df = spark.read
@@ -1258,7 +1259,7 @@ class GlutenClickHouseFileFormatSuite
         .toDF()
 
       val dataCorrect = new util.ArrayList[Row]()
-      dataCorrect.add(Row(null, null, null, 15))
+      dataCorrect.add(Row(null, null, null, 15, 1))
 
       var expectedAnswer: Seq[Row] = null
       withSQLConf(vanillaSparkConfs(): _*) {
@@ -1281,7 +1282,8 @@ class GlutenClickHouseFileFormatSuite
           StructField.apply("a", IntegerType, nullable = true),
           StructField.apply("b", IntegerType, nullable = true),
           StructField.apply("c", IntegerType, nullable = true),
-          StructField.apply("d", IntegerType, nullable = true)
+          StructField.apply("d", IntegerType, nullable = true),
+          StructField.apply("e", IntegerType, nullable = true)
         ))
 
       val df = spark.read
@@ -1291,7 +1293,7 @@ class GlutenClickHouseFileFormatSuite
         .toDF()
 
       val dataCorrect = new util.ArrayList[Row]()
-      dataCorrect.add(Row(15, -1, 85, 15))
+      dataCorrect.add(Row(15, -1, 85, 15, 1))
 
       var expectedAnswer: Seq[Row] = null
       withSQLConf(vanillaSparkConfs(): _*) {
