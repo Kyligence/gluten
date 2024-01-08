@@ -255,8 +255,9 @@ bool ExcelTextFormatReader::readField(
         || (format_settings.csv.allow_double_quotes && maybe_quote == '\"'))
         has_quote = true;
 
-    auto column_back_func = [&column_size](DB::IColumn & column_back) -> void
+    auto column_back_func = [&](DB::IColumn & column_back) -> void
     {
+        skipErrorChars(*buf, has_quote, maybe_quote, escape, format_settings);
         if (column_back.isNullable())
         {
             ColumnNullable & col = assert_cast<ColumnNullable &>(column_back);
@@ -265,6 +266,8 @@ bool ExcelTextFormatReader::readField(
             if (col.getNestedColumn().size() == column_size + 1)
                 col.getNestedColumn().popBack(1);
         }
+
+        column.insertDefault();
     };
 
     try
@@ -278,18 +281,22 @@ bool ExcelTextFormatReader::readField(
         if (!isParseError(e.code()))
             throw;
 
-        skipErrorChars(*buf, has_quote, maybe_quote, escape, format_settings);
         column_back_func(column);
-        column.insertDefault();
-
         return false;
     }
 
     if (column_size == column.size())
     {
-        skipErrorChars(*buf, has_quote, maybe_quote, escape, format_settings);
         column_back_func(column);
-        column.insertDefault();
+        return false;
+    }
+
+    if (!isEndOfLine())
+    {
+        skipWhitespacesAndTabs(*buf, format_settings.csv.allow_whitespace_or_tab_as_delimiter);
+
+        if (*buf->position() != format_settings.csv.delimiter)
+            column_back_func(column);
         return false;
     }
 
