@@ -34,6 +34,7 @@ on:
 jobs:
   add-comment:
     runs-on: ubuntu-latest
+    permissions: write-all
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -42,8 +43,9 @@ jobs:
           sleep 15
         
       - name: Add comment to PR
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         run: |
           COMMENT="Run Gluten Clickhouse CI"
           URL=$(jq -r .pull_request.comments_url "$GITHUB_EVENT_PATH")
